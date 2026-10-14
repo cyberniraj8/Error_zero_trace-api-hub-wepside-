@@ -1,0 +1,9 @@
+{
+  "name": "error-zero-trace-api-hub",
+  "version": "2.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@vercel/kv": "^2.0.0"
+  }
+}
