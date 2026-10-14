@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ErrorZeroTrace • Premium API Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #050509;
+    --surface: rgba(255,255,255,0.03);
+    --surface-2: rgba(255,255,255,0.06);
+    --border: rgba(255,255,255,0.08);
+    --border-2: rgba(255,255,255,0.12);
+    --text: #f0f0f5;
+    --text-dim: #8b8b9a;
+    --text-dimmer: #5a5a6b;
+    --primary: #8b5cf6;
+    --primary-2: #a78bfa;
+    --accent: #22d3ee;
+    --accent-2: #67e8f9;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --grad: linear-gradient(135deg, #8b5cf6 0%, #22d3ee 100%);
+    --grad-soft: linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(34,211,238,0.15) 100%);
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .bg-wrap { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .orb { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.45; animation: drift 20s ease-in-out infinite; }
+  .orb-1 { width: 500px; height: 500px; background: #8b5cf6; top: -150px; left: -150px; }
+  .orb-2 { width: 400px; height: 400px; background: #22d3ee; top: 40%; right: -120px; animation-delay: -7s; }
+  .orb-3 { width: 350px; height: 350px; background: #ec4899; bottom: -100px; left: 30%; animation-delay: -14s; }
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(60px, -40px) scale(1.1); }
+    66% { transform: translate(-40px, 60px) scale(0.95); }
+  }
+  .grid-overlay {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 50px 50px; pointer-events: none;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+  #lockScreen {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    background: rgba(5,5,9,0.85); backdrop-filter: blur(30px);
+    animation: fadeIn .4s ease;
+  }
+  .lock-card {
+    position: relative; width: 100%; max-width: 400px;
+    padding: 44px 32px 36px;
+    background: rgba(20,20,30,0.7);
+    border: 1px solid var(--border-2);
+    border-radius: 28px;
+    text-align: center;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px);
+  }
+  .lock-card::before {
+    content: ''; position: absolute; inset: -1px; border-radius: 28px; padding: 1px;
+    background: linear-gradient(135deg, rgba(139,92,246,0.6), rgba(34,211,238,0.3), transparent 70%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
+  }
+  .lock-icon-wrap {
+    width: 72px; height: 72px; margin: 0 auto 20px;
+    border-radius: 22px; background: var(--grad);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; box-shadow: 0 12px 40px rgba(139,92,246,0.4);
+    animation: pulse 2.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 12px 40px rgba(139,92,246,0.4); }
+    50% { transform: scale(1.05); box-shadow: 0 18px 60px rgba(139,92,246,0.6); }
+  }
+  .lock-card h2 {
+    font-size: 1.55rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px;
+    background: linear-gradient(135deg, #fff 0%, #a78bfa 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .lock-card .sub { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 26px; }
+  .lock-input-wrap { position: relative; margin-bottom: 14px; }
+  .lock-input-wrap .icon {
+    position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+    color: var(--text-dimmer); font-size: 16px;
+  }
+  #lockInput {
+    width: 100%; padding: 15px 16px 15px 44px;
+    background: rgba(0,0,0,0.4); border: 1px solid var(--border);
+    border-radius: 14px; color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem; letter-spacing: 1px; outline: none; transition: all .2s;
+  }
+  #lockInput:focus {
+    border-color: var(--primary); background: rgba(139,92,246,0.05);
+    box-shadow: 0 0 0 4px rgba(139,92,246,0.15);
+  }
+  .btn-primary {
+    width: 100%; padding: 15px; background: var(--grad); color: #fff;
+    font-family: inherit; font-weight: 700; font-size: 0.95rem;
+    border: none; border-radius: 14px; cursor: pointer;
+    transition: all .25s; box-shadow: 0 10px 30px rgba(139,92,246,0.35);
+    position: relative; overflow: hidden;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 15px 40px rgba(139,92,246,0.5); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  #lockError { color: var(--danger); font-size: 0.82rem; margin-top: 12px; min-height: 18px; font-weight: 500; }
+  #mainApp { display: none; position: relative; z-index: 1; min-height: 100vh; }
+  #mainApp.show { display: block; animation: fadeUp .5s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .topnav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 28px; background: rgba(5,5,9,0.7);
+    backdrop-filter: blur(20px); border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.05rem; letter-spacing: -0.3px; }
+  .brand-logo {
+    width: 36px; height: 36px; border-radius: 10px; background: var(--grad);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; box-shadow: 0 6px 20px rgba(139,92,246,0.4);
+  }
+  .brand-text { background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .nav-links { display: flex; gap: 8px; }
+  .nav-link {
+    padding: 9px 16px; border-radius: 10px; font-size: 0.88rem; font-weight: 500;
+    color: var(--text-dim); cursor: pointer; transition: all .2s;
+    border: 1px solid transparent; background: transparent; font-family: inherit;
+  }
+  .nav-link:hover { color: var(--text); background: var(--surface); }
+  .nav-link.active { color: #fff; background: var(--grad-soft); border-color: rgba(139,92,246,0.3); }
+  .hero { max-width: 1200px; margin: 0 auto; padding: 80px 28px 40px; text-align: center; }
+  .hero-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px; background: var(--grad-soft);
+    border: 1px solid rgba(139,92,246,0.25); border-radius: 999px;
+    font-size: 0.78rem; color: var(--primary-2); margin-bottom: 22px; font-weight: 500;
+  }
+  .hero-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 10px #4ade80; animation: blink 1.5s ease-in-out infinite; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  .hero h1 { font-size: clamp(2rem, 6vw, 3.8rem); font-weight: 700; line-height: 1.05; letter-spacing: -1.5px; margin-bottom: 18px; }
+  .hero h1 .grad { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero p { color: var(--text-dim); font-size: clamp(0.95rem, 2vw, 1.1rem); max-width: 580px; margin: 0 auto 32px; }
+  .hero-cta { display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .btn-ghost {
+    padding: 13px 24px; background: var(--surface); color: var(--text);
+    border: 1px solid var(--border-2); border-radius: 12px;
+    font-family: inherit; font-weight: 600; font-size: 0.9rem;
+    cursor: pointer; text-decoration: none; transition: all .2s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-ghost:hover { background: var(--surface-2); border-color: var(--primary); transform: translateY(-2px); }
+  .section { max-width: 1200px; margin: 0 auto; padding: 60px 28px; display: none; }
+  .section.active { display: block; animation: fadeUp .4s ease; }
+  .section-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+  .section-head h2 { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.8px; }
+  .section-head h2 .accent { color: var(--accent); }
+  .section-head p { color: var(--text-dim); font-size: 0.9rem; margin-top: 4px; }
+  .glass {
+    position: relative; background: rgba(20,20,30,0.5);
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 26px; backdrop-filter: blur(20px); transition: all .3s ease;
+  }
+  .glass::before {
+    content: ''; position: absolute; inset: 0; border-radius: 20px; padding: 1px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent 40%, transparent 60%, rgba(255,255,255,0.05));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
+  }
+  .api-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-bottom: 40px; }
+  .api-card {
+    position: relative; padding: 24px;
+    background: rgba(20,20,30,0.5); border: 1px solid var(--border);
+    border-radius: 18px; backdrop-filter: blur(20px);
+    overflow: hidden; transition: all .3s ease;
+  }
+  .api-card:hover { transform: translateY(-4px); border-color: rgba(139,92,246,0.4); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+  .api-icon {
+    width: 48px; height: 48px; border-radius: 14px;
+    background: var(--grad-soft); border: 1px solid rgba(139,92,246,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; margin-bottom: 16px;
+  }
+  .api-card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .api-card .desc { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 16px; line-height: 1.55; }
+  .api-endpoint {
+    background: rgba(0,0,0,0.5); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+    color: var(--accent-2); word-break: break-all; margin-bottom: 14px;
+    overflow-x: auto; white-space: nowrap;
+  }
+  .api-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .api-tag {
+    font-size: 0.7rem; padding: 4px 10px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 999px; color: var(--text-dim); font-weight: 500;
+  }
+  .api-tag.hot { color: #fbbf24; border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.08); }
+  .api-tag.new { color: #4ade80; border-color: rgba(74,222,128,0.3); background: rgba(74,222,128,0.08); }
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    display: block; font-size: 0.78rem; color: var(--text-dim);
+    margin-bottom: 8px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.8px;
+  }
+  .input, .select {
+    width: 100%; padding: 13px 16px;
+    background: rgba(0,0,0,0.4); border: 1px solid var(--border);
+    border-radius: 12px; color: var(--text);
+    font-family: inherit; font-size: 0.92rem; outline: none; transition: all .2s;
+  }
+  .input:focus, .select:focus {
+    border-color: var(--primary); background: rgba(139,92,246,0.05);
+    box-shadow: 0 0 0 4px rgba(139,92,246,0.12);
+  }
+  .input::placeholder { color: var(--text-dimmer); }
+  .select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b8b9a' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
+    background-repeat: no-repeat; background-position: right 14px center;
+    background-size: 16px; padding-right: 42px;
+  }
+  .select option { background: #14141c; color: #fff; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+  .output {
+    margin-top: 16px; padding: 18px;
+    background: rgba(0,0,0,0.5); border: 1px solid var(--border);
+    border-radius: 14px; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: var(--accent-2);
+    white-space: pre-wrap; word-break: break-all;
+    max-height: 500px; overflow-y: auto;
+    display: none; line-height: 1.6;
+  }
+  .output.show { display: block; animation: fadeIn .3s; }
+  .output::-webkit-scrollbar { width: 8px; }
+  .output::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 4px; }
+  .key-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+  .key-row-item {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; padding: 16px 18px;
+    background: rgba(0,0,0,0.35); border: 1px solid var(--border);
+    border-radius: 14px; transition: all .2s; flex-wrap: wrap;
+  }
+  .key-row-item:hover { border-color: rgba(139,92,246,0.3); background: rgba(139,92,246,0.04); }
+  .key-main { flex: 1; min-width: 220px; }
+  .key-code {
+    font-family: 'JetBrains Mono', monospace; font-weight: 600;
+    font-size: 0.92rem; color: var(--primary-2);
+    letter-spacing: 0.5px; word-break: break-all;
+  }
+  .key-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; font-size: 0.75rem; color: var(--text-dim); }
+  .pill { padding: 3px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.3px; }
+  .pill.active { background: rgba(34,197,94,0.12); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
+  .pill.expired { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+  .pill.days { background: rgba(139,92,246,0.12); color: var(--primary-2); border: 1px solid rgba(139,92,246,0.25); }
+  .copy-btn {
+    padding: 8px 14px; background: var(--surface-2);
+    border: 1px solid var(--border-2); border-radius: 10px;
+    color: var(--text); font-family: inherit; font-size: 0.8rem;
+    cursor: pointer; transition: all .2s; font-weight: 500; white-space: nowrap;
+  }
+  .copy-btn:hover { background: var(--grad-soft); border-color: var(--primary); color: #fff; }
+  .plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; }
+  .plan {
+    position: relative; padding: 26px 22px;
+    background: rgba(20,20,30,0.5); border: 1px solid var(--border);
+    border-radius: 18px; backdrop-filter: blur(20px);
+    transition: all .3s; overflow: hidden;
+  }
+  .plan:hover { transform: translateY(-4px); border-color: rgba(139,92,246,0.4); }
+  .plan.featured {
+    border-color: rgba(139,92,246,0.5);
+    background: linear-gradient(180deg, rgba(139,92,246,0.08) 0%, rgba(20,20,30,0.5) 100%);
+    box-shadow: 0 20px 50px rgba(139,92,246,0.15);
+  }
+  .plan.featured::before {
+    content: 'POPULAR'; position: absolute; top: 14px; right: 14px;
+    padding: 3px 10px; background: var(--grad); color: #fff;
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.8px; border-radius: 999px;
+  }
+  .plan-name { font-size: 0.9rem; color: var(--text-dim); font-weight: 500; margin-bottom: 10px; }
+  .plan-days {
+    font-size: 2.4rem; font-weight: 700; line-height: 1;
+    margin-bottom: 4px; letter-spacing: -2px;
+    background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .plan-unit { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 18px; }
+  .plan-features { list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 0.82rem; color: var(--text-dim); }
+  .plan-features li { display: flex; align-items: center; gap: 8px; }
+  .plan-features li::before {
+    content: '✓'; color: var(--accent); font-weight: 700;
+    width: 16px; height: 16px; display: inline-flex;
+    align-items: center; justify-content: center;
+    background: rgba(34,211,238,0.12); border-radius: 50%;
+    font-size: 0.7rem; flex-shrink: 0;
+  }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 40px; }
+  .stat {
+    padding: 22px; background: rgba(20,20,30,0.5);
+    border: 1px solid var(--border); border-radius: 16px;
+    text-align: center; backdrop-filter: blur(20px);
+  }
+  .stat-num { font-size: 1.8rem; font-weight: 700; letter-spacing: -1px; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .stat-label { font-size: 0.78rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; }
+  .footer { max-width: 1200px; margin: 40px auto 0; padding: 40px 28px; text-align: center; border-top: 1px solid var(--border); color: var(--text-dimmer); font-size: 0.85rem; }
+  .footer-links { display: flex; justify-content: center; gap: 18px; margin-bottom: 14px; flex-wrap: wrap; }
+  .footer-links a { color: var(--text-dim); text-decoration: none; transition: color .2s; font-weight: 500; }
+  .footer-links a:hover { color: var(--primary-2); }
+  .footer-dev strong { color: var(--primary-2); }
+  .msg { padding: 10px 0; font-size: 0.85rem; color: var(--text-dim); }
+  .msg.err { color: #f87171; }
+  @media (max-width: 640px) {
+    .topnav { padding: 14px 18px; }
+    .nav-links { gap: 4px; }
+    .nav-link { padding: 8px 12px; font-size: 0.8rem; }
+    .nav-link .lbl { display: none; }
+    .nav-link .ico { font-size: 1rem; }
+    .hero { padding: 50px 18px 30px; }
+    .section { padding: 40px 18px; }
+    .section-head h2 { font-size: 1.35rem; }
+    .glass, .api-card, .plan { padding: 20px; }
+    .brand-text { font-size: 0.95rem; }
+  }
+  @media (min-width: 641px) { .nav-link .ico { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="bg-wrap">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+<div class="grid-overlay"></div>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen">
+  <div class="lock-card">
+    <div class="lock-icon-wrap">🔐</div>
+    <h2>Premium Access</h2>
+    <p class="sub">ErrorZeroTrace API Hub में स्वागत है</p>
+    <div class="lock-input-wrap">
+      <span class="icon">🔑</span>
+      <input id="lockInput" type="password" placeholder="••••••••" autocomplete="off" onkeydown="if(event.key==='Enter')checkPass()" />
+    </div>
+    <button class="btn-primary" onclick="checkPass()">Unlock Access →</button>
+    <div id="lockError"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp">
+  <nav class="topnav">
+    <div class="brand">
+      <div class="brand-logo">⚡</div>
+      <span class="brand-text">ErrorZeroTrace</span>
+    </div>
+    <div class="nav-links">
+      <button class="nav-link active" data-tab="home" onclick="switchTab('home', this)"><span class="ico">🏠</span><span class="lbl">Home</span></button>
+      <button class="nav-link" data-tab="lookup" onclick="switchTab('lookup', this)"><span class="ico">🔍</span><span class="lbl">Lookup</span></button>
+      <button class="nav-link" data-tab="plans" onclick="switchTab('plans', this)"><span class="ico">💎</span><span class="lbl">Plans</span></button>
+      <button class="nav-link" data-tab="admin" onclick="switchTab('admin', this)"><span class="ico">🛠️</span><span class="lbl">Admin</span></button>
+    </div>
+  </nav>
+
+  <section class="section active" id="tab-home">
+    <div class="hero">
+      <div class="hero-pill"><span class="dot"></span> API System Live • v2.0</div>
+      <h1>Premium <span class="grad">Number Info</span><br/>API for Developers</h1>
+      <p>Indian mobile numbers की complete जानकारी — fast, reliable, और secure key-based access के साथ।</p>
+      <div class="hero-cta">
+        <button class="btn-primary" style="width:auto; padding:13px 28px;" onclick="switchTab('lookup', document.querySelector('[data-tab=lookup]'))">🔍 Try Lookup</button>
+        <a class="btn-ghost" href="https://t.me/+wnqbWkvzVFU0ODc1" target="_blank">💬 Get Access</a>
+      </div>
+    </div>
+    <div style="max-width:1200px; margin: 0 auto; padding: 0 28px;">
+      <div class="section-head"><div><h2>Available <span class="accent">APIs</span></h2><p>Production-ready endpoints, key-protected</p></div></div>
+      <div class="api-grid">
+        <div class="api-card">
+          <div class="api-icon">📱</div>
+          <h3>Number Info API</h3>
+          <p class="desc">Get name, address, circle, email, and complete details of any Indian mobile number.</p>
+          <div class="api-endpoint">GET /api/number?number=9876543210&amp;key=EZT-XXXX</div>
+          <div class="api-tags">
+            <span class="api-tag hot">🔥 Popular</span>
+            <span class="api-tag new">● Live</span>
+            <span class="api-tag">India</span>
+            <span class="api-tag">JSON</span>
+          </div>
+        </div>
+      </div>
+      <div class="stats" style="margin-top:40px">
+        <div class="stat"><div class="stat-num">99.9%</div><div class="stat-label">Uptime</div></div>
+        <div class="stat"><div class="stat-num">&lt;500ms</div><div class="stat-label">Avg Response</div></div>
+        <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">Support</div></div>
+        <div class="stat"><div class="stat-num">∞</div><div class="stat-label">Requests</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="tab-lookup">
+    <div class="section-head"><div><h2>🔍 Number <span class="accent">Lookup</span></h2><p>अपनी API key और number डालो — instantly details निकलेंगी</p></div></div>
+    <div class="glass" style="max-width: 640px;">
+      <div class="form-group">
+        <label class="form-label">📱 Mobile Number</label>
+        <input id="lookupNum" class="input" type="tel" placeholder="7056971214 या 917056971214" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">🔑 API Key</label>
+        <input id="lookupKey" class="input" type="text" placeholder="EZT-XXXX-XXXX-XXXX" />
+      </div>
+      <button class="btn-primary" id="lookupBtn" onclick="doLookup()">🚀 Fetch Details</button>
+      <div class="output" id="lookupOut"></div>
+    </div>
+  </section>
+
+  <section class="section" id="tab-plans">
+    <div class="section-head"><div><h2>💎 Pricing <span class="accent">Plans</span></h2><p>अपनी ज़रूरत के हिसाब से plan चुनो</p></div></div>
+    <div class="plans-grid">
+      <div class="plan"><div class="plan-name">Trial</div><div class="plan-days">1</div><div class="plan-unit">दिन</div><ul class="plan-features"><li>Unlimited calls</li><li>All APIs access</li><li>Testing के लिए</li></ul></div>
+      <div class="plan"><div class="plan-name">Starter</div><div class="plan-days">5</div><div class="plan-unit">दिन</div><ul class="plan-features"><li>Unlimited calls</li><li>All APIs access</li><li>Priority support</li></ul></div>
+      <div class="plan featured"><div class="plan-name">Popular</div><div class="plan-days">10</div><div class="plan-unit">दिन</div><ul class="plan-features"><li>Unlimited calls</li><li>All APIs access</li><li>Best value</li></ul></div>
+      <div class="plan"><div class="plan-name">Standard</div><div class="plan-days">15</div><div class="plan-unit">दिन</div><ul class="plan-features"><li>Unlimited calls</li><li>All APIs access</li><li>Priority support</li></ul></div>
+      <div class="plan featured"><div class="plan-name">Monthly</div><div class="plan-days">30</div><div class="plan-unit">दिन</div><ul class="plan-features"><li>Unlimited calls</li><li>All APIs access</li><li>Save 40%</li></ul></div>
+      <div class="plan"><div class="plan-name">Pro</div><div class="plan-days">60</div><div class="plan-unit">दिन</div><ul class="plan-features"><li>Unlimited calls</li><li>All APIs access</li><li>Best for resellers</li></ul></div>
+    </div>
+    <div class="glass" style="margin-top: 40px; text-align: center;">
+      <h3 style="font-size:1.2rem; margin-bottom:8px;">🔑 Key चाहिए?</h3>
+      <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 18px;">Telegram पर message करो और अपनी plan बताओ।</p>
+      <a class="btn-primary" style="display:inline-block; width:auto; padding:13px 26px; text-decoration:none; color:#fff;" href="https://t.me/+wnqbWkvzVFU0ODc1" target="_blank">💬 Contact on Telegram</a>
+    </div>
+  </section>
+
+  <section class="section" id="tab-admin">
+    <div class="section-head"><div><h2>🛠️ Admin <span class="accent">Panel</span></h2><p>Keys generate करो और manage करो</p></div></div>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 22px;">
+      <div class="glass">
+        <h3 style="font-size:1.1rem; margin-bottom:6px;">🎫 Generate New Keys</h3>
+        <p style="color:var(--text-dim); font-size:0.85rem; margin-bottom:20px;">Validity चुनो, count डालो, instantly keys बनाओ।</p>
+        <div class="form-group"><label class="form-label">🔐 Admin Password</label><input id="adminPass" class="input" type="password" placeholder="Admin password..." /></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">⏱️ Validity</label>
+            <select id="genDays" class="select">
+              <option value="1">1 दिन (Trial)</option>
+              <option value="5">5 दिन</option>
+              <option value="10">10 दिन</option>
+              <option value="15">15 दिन</option>
+              <option value="30" selected>30 दिन</option>
+              <option value="60">60 दिन</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">🔢 Count (max 50)</label><input id="genCount" class="input" type="number" value="1" min="1" max="50" /></div>
+        </div>
+        <div class="form-group"><label class="form-label">📝 Note (optional)</label><input id="genNote" class="input" type="text" placeholder="जैसे: Rahul ka key" /></div>
+        <button class="btn-primary" id="genBtn" onclick="generateKeys()">✨ Generate Keys</button>
+        <div class="output" id="genOut"></div>
+      </div>
+      <div class="glass">
+        <h3 style="font-size:1.1rem; margin-bottom:6px;">📋 All Keys</h3>
+        <p style="color:var(--text-dim); font-size:0.85rem; margin-bottom:20px;">सारी keys देखो — status, expiry, usage के साथ।</p>
+        <div class="form-group"><label class="form-label">🔐 Admin Password</label><input id="listPass" class="input" type="password" placeholder="Admin password..." /></div>
+        <button class="btn-primary" id="listBtn" onclick="listKeys()">📃 Load Keys</button>
+        <div id="keysList" class="key-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="https://www.youtube.com/@ErrorZeroTrace" target="_blank">📺 YouTube</a>
+      <a href="https://t.me/+wnqbWkvzVFU0ODc1" target="_blank">💬 Telegram</a>
+    </div>
+    <div>© 2026 ErrorZeroTrace API Hub</div>
+    <div class="footer-dev" style="margin-top:8px;">Developer: <strong>@error_zero_trace</strong></div>
+  </footer>
+</div>
+
+<script>
+const SITE_PASSWORD = "sahnisarkar";
+const STORAGE_KEY = "ezt_hub_unlocked";
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (sessionStorage.getItem(STORAGE_KEY) === "yes") unlock();
+});
+
+function checkPass() {
+  const input = document.getElementById('lockInput').value;
+  const err = document.getElementById('lockError');
+  if (input === SITE_PASSWORD) {
+    sessionStorage.setItem(STORAGE_KEY, "yes");
+    unlock();
+  } else {
+    err.textContent = "❌ Galat password bhai";
+    document.getElementById('lockInput').value = "";
+  }
+}
+
+function unlock() {
+  document.getElementById('lockScreen').style.display = "none";
+  document.getElementById('mainApp').classList.add('show');
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.nav-link').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(p => p.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const target = document.getElementById('tab-' + name);
+  if (target) target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function doLookup() {
+  const num = document.getElementById('lookupNum').value.trim();
+  const key = document.getElementById('lookupKey').value.trim();
+  const out = document.getElementById('lookupOut');
+  const btn = document.getElementById('lookupBtn');
+
+  if (!num || !key) { out.textContent = '❌ Number और Key दोनों डालो'; out.classList.add('show'); return; }
+
+  btn.disabled = true; btn.textContent = '⏳ Fetching...';
+  out.textContent = '⏳ Loading...'; out.classList.add('show');
+
+  try {
+    const r = await fetch(`/api/number?number=${encodeURIComponent(num)}&key=${encodeURIComponent(key)}`);
+    const data = await r.json();
+    out.textContent = JSON.stringify(data, null, 2);
+  } catch (e) { out.textContent = '❌ Error: ' + e.message; }
+  btn.disabled = false; btn.textContent = '🚀 Fetch Details';
+}
+
+async function generateKeys() {
+  const pass = document.getElementById('adminPass').value;
+  const days = document.getElementById('genDays').value;
+  const count = document.getElementById('genCount').value;
+  const note = document.getElementById('genNote').value;
+  const out = document.getElementById('genOut');
+  const btn = document.getElementById('genBtn');
+
+  if (!pass) { out.textContent = '❌ Admin password डालो'; out.classList.add('show'); return; }
+
+  btn.disabled = true; btn.textContent = '⏳ Generating...';
+  out.textContent = '⏳ Please wait...'; out.classList.add('show');
+
+  try {
+    const r = await fetch('/api/keys', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Pass': pass },
+      body: JSON.stringify({ days: parseInt(days), count: parseInt(count), note })
+    });
+    const data = await r.json();
+    if (data.status === 'success') {
+      out.textContent = `✅ ${data.count} keys बनीं (${days} दिन):\n\n` + data.keys.map(k => k.key).join('\n');
+    } else {
+      out.textContent = '❌ ' + (data.message || 'Error');
+    }
+  } catch (e) { out.textContent = '❌ Error: ' + e.message; }
+  btn.disabled = false; btn.textContent = '✨ Generate Keys';
+}
+
+async function listKeys() {
+  const pass = document.getElementById('listPass').value;
+  const btn = document.getElementById('listBtn');
+  const list = document.getElementById('keysList');
+
+  if (!pass) { list.innerHTML = '<div class="msg err">❌ Password डालो</div>'; return; }
+
+  btn.disabled = true; btn.textContent = '⏳ Loading...';
+  list.innerHTML = '<div class="msg">⏳ Loading...</div>';
+
+  try {
+    const r = await fetch('/api/keys?admin=' + encodeURIComponent(pass));
+    const data = await r.json();
+
+    if (data.status !== 'success') {
+      list.innerHTML = '<div class="msg err">❌ ' + (data.message || 'Error') + '</div>';
+    } else if (data.total === 0) {
+      list.innerHTML = '<div class="msg">कोई key नहीं है अभी।</div>';
+    } else {
+      const now = Date.now();
+      list.innerHTML = `<div class="msg">📊 कुल: <b>${data.total}</b> keys</div>` +
+        data.keys.map(k => {
+          const expired = now > k.expiresAt;
+          const daysLeft = Math.max(0, Math.ceil((k.expiresAt - now) / 86400000));
+          return `<div class="key-row-item">
+            <div class="key-main">
+              <div class="key-code">${k.key}</div>
+              <div class="key-meta">
+                <span class="pill ${expired ? 'expired' : 'active'}">${expired ? '● Expired' : '● Active • ' + daysLeft + 'd'}</span>
+                <span class="pill days">${k.days} दिन</span>
+                <span>Uses: ${k.usedCount || 0}</span>
+                ${k.note ? '<span>📝 ' + k.note + '</span>' : ''}
+              </div>
+            </div>
+            <button class="copy-btn" onclick="copyKey('${k.key}', this)">📋 Copy</button>
+          </div>`;
+        }).join('');
+    }
+  } catch (e) { list.innerHTML = '<div class="msg err">❌ ' + e.message + '</div>'; }
+  btn.disabled = false; btn.textContent = '📃 Load Keys';
+}
+
+function copyKey(key, btn) {
+  navigator.clipboard.writeText(key).then(() => {
+    const old = btn.textContent;
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = old, 1200);
+  });
+}
+</script>
+</body>
+  </html>
